@@ -50,7 +50,7 @@ public class DispatcherServlet extends HttpServlet {
         String context = req.getContextPath();
         String path = url.replace(context, "");
         Method method = (Method) handerMap.get(path);
-        SpringmvcController controller = (SpringmvcController) instanceMap.get(path.split("/")[1]);
+        Object controller = instanceMap.get(path.split("/")[1]);
         try {
             method.invoke(controller, new Object[] { req, resp, null });
         } catch (IllegalAccessException e) {
