@@ -115,7 +115,7 @@ public class DispatcherServlet extends HttpServlet {
                 for (Method method : methods) {
                     if (method.isAnnotationPresent((Class<? extends Annotation>) RequestMapping.class)) {
                         RequestMapping rm = (RequestMapping) method.getAnnotation(RequestMapping.class);
-                        String rmvalue = rm.value();
+                        String rmvalue = rm.method();
                         handerMap.put("/" + ctvalue + "/" + rmvalue, method);
                     } else {
                         continue;
