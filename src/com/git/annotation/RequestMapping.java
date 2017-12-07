@@ -10,5 +10,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface RequestMapping {
-	String value() default "";
+	String url() default "";	//描述路径
+	String method() default "GET";	//用于描述请求方式，默认是GET请求
 }
