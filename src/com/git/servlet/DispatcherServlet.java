@@ -22,6 +22,7 @@ import com.git.annotation.Controller;
 import com.git.annotation.Autowired;
 import com.git.annotation.RequestMapping;
 import com.git.annotation.Service;
+import com.git.exception.SelfInjectionException;
 
 public class DispatcherServlet extends HttpServlet {
 
@@ -97,18 +98,22 @@ public class DispatcherServlet extends HttpServlet {
             Field fields[] = entry.getValue().getClass().getDeclaredFields();
             for (Field field : fields) {
                 field.setAccessible(true);//可访问私有属性
-                if (field.isAnnotationPresent((Class<? extends Annotation>) Autowired.class));
-//                Autowired autowired = field.getAnnotation(Autowired.class);
-//                String value = autowired.value();
-                String value = field.getType().getName();
-                field.setAccessible(true);
-                try {
-                    field.set(entry.getValue(), instanceMap.get(value));
-                } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
+                if (field.isAnnotationPresent((Class<? extends Annotation>) Autowired.class)){
+//                	Autowired autowired = field.getAnnotation(Autowired.class);
+//                	String value = autowired.value();
+                	String value = field.getType().getName();
+	                field.setAccessible(true);
+	                if(entry.getKey().equals(value)){
+                		throw new SelfInjectionException(value + "里出现自我调用");
+                	}
+	                try {
+	                	field.set(entry.getValue(), instanceMap.get(value));
+	                } catch (IllegalArgumentException e) {
+	                	e.printStackTrace();
+	                } catch (IllegalAccessException e) {
+	                	e.printStackTrace();
+	                }
+	            }
             }
         }
 	}
