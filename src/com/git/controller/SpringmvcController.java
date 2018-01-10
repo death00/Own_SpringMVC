@@ -4,17 +4,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.git.annotation.Controller;
-import com.git.annotation.Quatifier;
+import com.git.annotation.Autowired;
 import com.git.annotation.RequestMapping;
 import com.git.service.MyService;
 import com.git.service.SpringmvcService;
 
-@Controller("git")
+@Controller
+@RequestMapping(url="/springmvc")
 public class SpringmvcController {
-	@Quatifier("MyServiceImpl")
+	@Autowired
     MyService myService;
 	
-    @Quatifier("SpringmvcServiceImpl")
+    @Autowired
     SpringmvcService smService;
     
     @RequestMapping(url="insert")

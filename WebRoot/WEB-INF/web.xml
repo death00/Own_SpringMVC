@@ -4,9 +4,23 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee 
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
+    <!-- 加载spring bean -->  
+    <context-param>  
+         <param-name>contextConfigLocation</param-name>  
+        <param-value>applicationContext.xml</param-value>  
+    </context-param>  
+    <listener>  
+        <listener-class>com.git.listener.ControllerHandleListener</listener-class>  
+    </listener>      
+    
     <servlet>
         <servlet-name>testServlet</servlet-name>
         <servlet-class>com.git.servlet.DispatcherServlet</servlet-class>
+        <init-param>  
+            <param-name>contextConfigLocation</param-name>  
+            <param-value>/WEB-INF/spring-mvc.xml</param-value>  
+        </init-param>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <!-- ... -->
     <servlet-mapping>

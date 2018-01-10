@@ -5,7 +5,7 @@ import java.util.Map;
 import com.git.annotation.Service;
 import com.git.service.MyService;
 
-@Service("MyServiceImpl")
+@Service
 public class MyServiceImpl implements MyService {
 
 	@Override

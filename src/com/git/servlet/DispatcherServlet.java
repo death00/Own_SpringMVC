@@ -19,10 +19,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.git.annotation.Controller;
-import com.git.annotation.Quatifier;
+import com.git.annotation.Autowired;
 import com.git.annotation.RequestMapping;
 import com.git.annotation.Service;
-import com.git.controller.SpringmvcController;
 
 public class DispatcherServlet extends HttpServlet {
 
@@ -30,9 +29,9 @@ public class DispatcherServlet extends HttpServlet {
 	
 	List<String> packageNames = new ArrayList<String>();
     // 所有类的实例，key是注解的value,value是所有类的实例
-	//instanceMap包括<controller的value,controller的实例>和<service的value,service的实例>
+	//instanceMap包括<controller的value,controller的实例>和<service的名字（包名+类名）,service的实例>
     Map<String, Object> instanceMap = new HashMap<String, Object>();
-    //handerMap包括<controller的value+method的value,method的实例>	(controller的value+method的value就是请求路径)
+    //handerMap包括<controller的value+method的value,method的实例>
     Map<String, Object> handerMap = new HashMap<String, Object>();
     
     public DispatcherServlet() {
@@ -49,9 +48,14 @@ public class DispatcherServlet extends HttpServlet {
         String url = req.getRequestURI();
         String context = req.getContextPath();
         String path = url.replace(context, "");
+        //根据path获得Method
         Method method = (Method) handerMap.get(path);
-        Object controller = instanceMap.get(path.split("/")[1]);
+        //获取该Method所属的Controller类名
+        String className = method.getDeclaringClass().getName();
+        //获取具体的Controller实例
+        Object controller = instanceMap.get(className);
         try {
+        	//调用具体Controller里的方法
             method.invoke(controller, new Object[] { req, resp, null });
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -63,9 +67,14 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     public void init(ServletConfig config) throws ServletException {
+    	super.init(config);
+    	//获取spring-mvc.xml的位置
+    	String contextConfigLocation = getInitParameter("contextConfigLocation");
+        System.out.println("contextConfigLocation:"+contextConfigLocation);
         //包扫描,获取包中的文件
         scanPackage("com.git");
         try {
+        	//过滤Controller和Service，并将其实例化
             filterAndInstance();
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,17 +85,22 @@ public class DispatcherServlet extends HttpServlet {
         ioc();
     }
     
+    /**
+     * 将Controller和Service中用到Autowired标签的地方，注入相应实例
+     */
     private void ioc() {
     	if (instanceMap.isEmpty())
             return;
         for (Map.Entry<String, Object> entry : instanceMap.entrySet()) {
+        	
             //拿到里面的所有属性
             Field fields[] = entry.getValue().getClass().getDeclaredFields();
             for (Field field : fields) {
                 field.setAccessible(true);//可访问私有属性
-                if (field.isAnnotationPresent((Class<? extends Annotation>) Quatifier.class));
-                Quatifier quatifier = field.getAnnotation(Quatifier.class);
-                String value = quatifier.value();
+                if (field.isAnnotationPresent((Class<? extends Annotation>) Autowired.class));
+//                Autowired autowired = field.getAnnotation(Autowired.class);
+//                String value = autowired.value();
+                String value = field.getType().getName();
                 field.setAccessible(true);
                 try {
                     field.set(entry.getValue(), instanceMap.get(value));
@@ -97,8 +111,6 @@ public class DispatcherServlet extends HttpServlet {
                 }
             }
         }
-        SpringmvcController git = (SpringmvcController) instanceMap.get("git");
-        System.out.print(git);
 	}
 
 	/**
@@ -109,14 +121,18 @@ public class DispatcherServlet extends HttpServlet {
             return;
         for (Map.Entry<String, Object> entry : instanceMap.entrySet()) {
             if (entry.getValue().getClass().isAnnotationPresent(Controller.class)) {
-                Controller controller = (Controller) entry.getValue().getClass().getAnnotation(Controller.class);
-                String ctvalue = controller.value();
+//                Controller controller = (Controller) entry.getValue().getClass().getAnnotation(Controller.class);
+                RequestMapping ctRm = (RequestMapping) entry.getValue().getClass().getAnnotation(RequestMapping.class);
+                String ctRmvalue = ctRm.url();
+                //如果首个字符不是“/”，则加上
+                ctRmvalue = dealWith(ctRmvalue);
                 Method[] methods = entry.getValue().getClass().getMethods();
                 for (Method method : methods) {
                     if (method.isAnnotationPresent((Class<? extends Annotation>) RequestMapping.class)) {
                         RequestMapping rm = (RequestMapping) method.getAnnotation(RequestMapping.class);
-                        String rmvalue = rm.method();
-                        handerMap.put("/" + ctvalue + "/" + rmvalue, method);
+                        String rmvalue = rm.url();
+                        rmvalue = dealWith(rmvalue);
+                        handerMap.put(ctRmvalue + rmvalue, method);
                     } else {
                         continue;
                     }
@@ -125,6 +141,19 @@ public class DispatcherServlet extends HttpServlet {
                 continue;
             }
         }
+	}
+    
+    /**
+     * 如果首个字符不是“/”，则加上
+     * @param ctRmvalue
+     * @return
+     */
+	private String dealWith(String ctRmvalue) {
+		ctRmvalue = ctRmvalue.trim();
+		if(!ctRmvalue.substring(0, 1).equals("/")){
+			ctRmvalue = "/" + ctRmvalue;
+		}
+		return ctRmvalue;
 	}
 
 	/**
@@ -136,17 +165,24 @@ public class DispatcherServlet extends HttpServlet {
             return;
         }
         for (String className : packageNames) {
+        	//获得该Class
             Class<?> cName = Class.forName(className.replace(".class", "").trim());
-            if (cName.isAnnotationPresent((Class<? extends Annotation>) Controller.class)) {
+            if (cName.isAnnotationPresent((Class<? extends Annotation>) Controller.class)) {	//Controller
                 Object instance = cName.newInstance();
                 Controller controller = (Controller) cName.getAnnotation(Controller.class);
-                String key = controller.value();
+//                String key = controller.value();
+//                instanceMap.put(key, instance);
+                //将该class名（包括包名）作为key
+                String key = cName.getName();
                 instanceMap.put(key, instance);
-            } else if (cName.isAnnotationPresent((Class<? extends Annotation>) Service.class)) {
+            } else if (cName.isAnnotationPresent((Class<? extends Annotation>) Service.class)) {	//Service
                 Object instance = cName.newInstance();
-                Service service = (Service) cName.getAnnotation(Service.class);
-                String key = service.value();
-                instanceMap.put(key, instance);
+//                Service service = (Service) cName.getAnnotation(Service.class);
+//                String key = service.value();
+//                instanceMap.put(key, instance);
+                //获得该Service实现的接口名
+                Class[] interfaces = cName.getInterfaces();
+                instanceMap.put(interfaces[0].getName(), instance);
             } else {
                 continue;
             }

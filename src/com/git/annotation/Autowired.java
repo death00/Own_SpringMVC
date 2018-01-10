@@ -9,6 +9,6 @@ import java.lang.annotation.Target;
 @Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Quatifier {
+public @interface Autowired {
 	String value() default "";
 }
