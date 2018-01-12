@@ -13,15 +13,15 @@ public class MyServiceImpl implements MyService {
 	@Autowired
 	SpringmvcService springmvcService;
 	
-	@Autowired
-	MyService myService;
+//	@Autowired
+//	MyService myService;
 	
 	@Override
 	public int insert(Map map) {
 		System.out.println("MyServiceImpl:" + "insert");
 		springmvcService.insert(map);
-		System.out.println("再来一次");
-		myService.delete(map);
+//		System.out.println("再来一次");
+//		myService.delete(map);
 		return 0;
 	}
 
