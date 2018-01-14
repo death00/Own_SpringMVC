@@ -1,2 +1,4 @@
 # Own_SpringMVC
 自己实现SpringMVC框架
+
+本人对于SpringMVC的理解，认为其最核心部分为DispatcherServlet，它在服务器启动的时候扫描包内的Controller和Service，确定了具体请求与Controller中的方法实现对应，并且将Controller和Service实例化，将Service注入到调用他们的Controller之中。而确定这些Controller、Service之间的差别的以及确定每个Controller具体调用了哪些Controller的，就是标签，因此，对于标签的使用也需要大家熟悉。
